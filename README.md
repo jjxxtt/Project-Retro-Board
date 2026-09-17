@@ -52,6 +52,4 @@ project-retro/
 - 原生 HTML / CSS / JavaScript（ES5+），无任何框架、打包器或 CDN 依赖。
 - 存储：`localStorage` + JSON 文件导入导出。
 
-## 📄 License
 
-本项目仅供学习与内部使用，未指定开源协议。如需公开分发，请自行补充 LICENSE。
