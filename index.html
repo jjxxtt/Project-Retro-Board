@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目过程记录与复盘台</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#ffffff; --panel-2:#fafbfc; --line:#edf0f3; --line-strong:#e3e7ec;
+    --text:#262b33; --muted:#9aa1ac; --muted-2:#b8bfc8;
+    --brand:#4c6ef5; --brand-2:#3b5bdb; --brand-soft:#eef2ff;
+    --green:#2f9e58; --green-bg:rgba(47,158,88,.10);
+    --orange:#e08a00; --orange-bg:rgba(224,138,0,.12);
+    --red:#e04b4b; --red-bg:rgba(224,75,75,.10);
+    --gray:#9aa0a6; --gray-bg:rgba(154,160,166,.14);
+    --shadow-sm:0 1px 2px rgba(20,30,50,.04);
+    --radius:10px; --radius-sm:7px;
+  }
+  [data-theme="dark"]{
+    --bg:#15171b; --panel:#1c1f24; --panel-2:#23272d; --line:#262a31; --line-strong:#333941;
+    --text:#e8eaee; --muted:#8b9099; --muted-2:#5d636c;
+    --brand:#6f8bff; --brand-2:#5b78f0; --brand-soft:#262d44;
+    --green:#46c07e; --green-bg:rgba(70,192,126,.14);
+    --orange:#f0a23a; --orange-bg:rgba(240,162,58,.16);
+    --red:#f06565; --red-bg:rgba(240,101,101,.16);
+    --gray:#7c828a; --gray-bg:rgba(124,130,138,.18);
+    --shadow-sm:0 1px 2px rgba(0,0,0,.3);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--text);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased;}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  input,select,textarea{font-family:inherit;font-size:14px;color:var(--text);
+    background:var(--panel);border:1px solid var(--line-strong);border-radius:var(--radius-sm);padding:7px 10px;width:100%;transition:.15s}
+  textarea{resize:vertical;min-height:60px;line-height:1.5}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:var(--radius-sm);
+    background:var(--brand);color:#fff;font-weight:600;white-space:nowrap;transition:.15s}
+  .btn:hover{background:var(--brand-2)}
+  .btn.ghost{background:var(--panel);border:1px solid var(--line-strong);color:var(--text);font-weight:500}
+  .btn.ghost:hover{background:var(--panel-2)}
+  .btn.sm{padding:4px 10px;font-size:12.5px;border-radius:6px}
+
+  .app{display:grid;grid-template-columns:236px 1fr;height:100vh}
+  /* sidebar */
+  .sidebar{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+  .brand{padding:16px 16px 10px;display:flex;align-items:center;gap:10px}
+  .brand .logo{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#4c6ef5,#7c9bff);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px}
+  .brand h1{font-size:14.5px;margin:0;font-weight:700}
+  .brand .sub{font-size:11px;color:var(--muted)}
+  .proj-head{padding:6px 14px;display:flex;justify-content:space-between;align-items:center}
+  .proj-head .t{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.6px}
+  .proj-list{flex:1;overflow:auto;padding:4px 9px}
+  .proj-item{padding:9px 11px;border-radius:8px;margin-bottom:2px;cursor:pointer;position:relative;transition:.12s}
+  .proj-item:hover{background:var(--panel-2)}
+  .proj-item.active{background:var(--brand-soft)}
+  .proj-item.active::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:3px;background:var(--brand)}
+  .proj-item .pn{font-weight:600;font-size:13.5px;display:flex;align-items:center;gap:6px;padding-right:18px}
+  .proj-item .pm{font-size:11px;color:var(--muted);padding-left:3px;margin-top:2px}
+  .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .proj-item .del{position:absolute;top:8px;right:7px;opacity:0;color:var(--muted);font-size:12px;padding:2px 5px;border-radius:5px;transition:.12s}
+  .proj-item:hover .del{opacity:1}
+  .proj-item .del:hover{background:var(--red-bg);color:var(--red)}
+  .side-foot{border-top:1px solid var(--line);padding:10px 12px;display:flex;gap:6px}
+  .side-foot .ib{flex:1;display:flex;align-items:center;justify-content:center;border:1px solid var(--line-strong);border-radius:7px;height:32px;color:var(--muted);font-size:12px;transition:.12s}
+  .side-foot .ib:hover{color:var(--brand);border-color:var(--brand);background:var(--brand-soft)}
+
+  .main{min-width:0;display:flex;flex-direction:column;overflow:hidden}
+  .topbar{padding:15px 24px 13px;border-bottom:1px solid var(--line);background:var(--panel)}
+  .topbar .r1{display:flex;align-items:center;gap:11px}
+  .topbar h2{margin:0;font-size:17px;font-weight:700;letter-spacing:-.3px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .status-pill{font-size:12px;padding:3px 11px;border-radius:999px;background:var(--brand-soft);color:var(--brand);font-weight:600;white-space:nowrap}
+  .topbar .desc{color:var(--muted);font-size:12.5px;margin:7px 0 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .progress-wrap{display:flex;align-items:center;gap:11px}
+  .progress-bar{flex:1;height:6px;border-radius:999px;background:var(--line);overflow:hidden}
+  .progress-bar > i{display:block;height:100%;background:linear-gradient(90deg,#4c6ef5,#7c9bff);border-radius:999px;transition:.4s}
+  .progress-num{font-size:13px;font-weight:700;color:var(--muted);min-width:38px;text-align:right}
+
+  .views{display:flex;gap:2px;padding:0 22px;background:var(--panel);border-bottom:1px solid var(--line)}
+  .views .v{padding:11px 14px;font-weight:600;font-size:13.5px;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;transition:.12s}
+  .views .v:hover{color:var(--text)}
+  .views .v.active{color:var(--brand);border-bottom-color:var(--brand)}
+
+  .content{flex:1;overflow:auto;padding:20px 24px 36px}
+
+  /* overview */
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow-sm)}
+  .kpi .k{font-size:11.5px;color:var(--muted);margin-bottom:6px}
+  .kpi .v{font-size:25px;font-weight:800;letter-spacing:-.5px;line-height:1}
+  .kpi .v small{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:0}
+  .kpi.alert{border-color:var(--red);background:var(--red-bg)}
+
+  .ov-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .block{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden}
+  .block > .bh{padding:13px 16px 11px;display:flex;align-items:center;border-bottom:1px solid var(--line)}
+  .block > .bh h3{margin:0;font-size:13.5px;font-weight:650}
+  .block > .bh .more{margin-left:auto;font-size:12.5px;color:var(--brand);font-weight:600;cursor:pointer}
+  .block > .bh .more:hover{text-decoration:underline}
+  .block .body{padding:4px 16px 12px}
+  .row-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer;transition:.12s}
+  .row-item:last-child{border-bottom:none}
+  .row-item:hover{opacity:.78}
+  .row-item .rt{font-weight:600;font-size:13.5px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row-item .rm{font-size:12px;color:var(--muted);white-space:nowrap}
+  .block.wide{grid-column:1 / -1;margin-top:0}
+  .less-row{display:flex;gap:11px;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer;transition:.12s}
+  .less-row:last-child{border-bottom:none}
+  .less-row:hover{opacity:.78}
+  .less-row .lc{flex-shrink:0}
+  .less-row .lt{font-weight:600;font-size:13.5px}
+  .less-row .lx{font-size:12.5px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .badge{font-size:11px;padding:2px 8px;border-radius:999px;font-weight:600;white-space:nowrap}
+  .b-green{background:var(--green-bg);color:var(--green)}
+  .b-orange{background:var(--orange-bg);color:var(--orange)}
+  .b-red{background:var(--red-bg);color:var(--red)}
+  .b-gray{background:var(--gray-bg);color:var(--gray)}
+  .b-blue{background:var(--brand-soft);color:var(--brand)}
+  .empty-s{color:var(--muted);font-size:13px;padding:18px 2px;text-align:center}
+
+  /* list view */
+  .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+  .toolbar .sp{flex:1}
+  .toolbar .search{max-width:260px}
+  .filters{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid var(--line-strong);color:var(--muted);background:var(--panel);cursor:pointer;transition:.12s}
+  .chip:hover{border-color:var(--brand);color:var(--brand)}
+  .chip.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+
+  .composer{background:transparent;border:1px solid var(--line);border-radius:var(--radius-sm);
+    padding:5px 9px;margin-bottom:13px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .composer input,.composer select{padding:5px 8px}
+  .composer .q-label{font-size:11px;color:var(--muted);margin-right:-3px}
+  .composer .q-date{width:auto}
+  .composer .q-title{flex:1;min-width:160px}
+  .composer .q-owner,.composer .q-tags{width:auto;max-width:108px}
+  .composer .q-add{padding:5px 11px}
+  .composer .hint{font-size:11px;color:var(--muted-2);width:100%;margin-top:-1px;display:none}
+  .composer:focus-within .hint{display:block}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px 15px;margin-bottom:9px;box-shadow:var(--shadow-sm);transition:.12s}
+  .card:hover{box-shadow:0 1px 4px rgba(20,30,50,.07)}
+  .card.editing{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  .card .head{display:flex;align-items:flex-start;gap:10px;margin-bottom:5px}
+  .card .tt{font-weight:650;font-size:14px;flex:1;letter-spacing:-.1px}
+  .card .meta{font-size:12px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:5px}
+  .card .bd{color:var(--text);white-space:pre-wrap;word-break:break-word;font-size:13.5px;line-height:1.6}
+  .card .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .tag{font-size:11px;padding:2px 8px;border-radius:6px;background:var(--panel-2);color:var(--muted);border:1px solid var(--line)}
+  .card .acts{display:flex;gap:3px;opacity:0;transition:.12s}
+  .card:hover .acts{opacity:1}
+  .card .acts button{font-size:12px;color:var(--muted);padding:3px 9px;border-radius:6px}
+  .card .acts button:hover{background:var(--panel-2);color:var(--text)}
+  .card .acts .ed:hover{color:var(--brand)}
+  .card .acts .dl:hover{background:var(--red-bg);color:var(--red)}
+  .editing .acts-row{display:flex;gap:8px;margin-top:4px}
+  .editing .field{margin-bottom:9px}
+  .field{display:flex;flex-direction:column;gap:5px}
+  .field label{font-size:12px;color:var(--muted);font-weight:600}
+  .field .req{color:var(--red)}
+
+  .mask{position:fixed;inset:0;background:rgba(15,18,25,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;backdrop-filter:blur(2px)}
+  .mask.show{display:flex}
+  .modal{background:var(--panel);border-radius:14px;width:100%;max-width:460px;max-height:88vh;overflow:auto;box-shadow:0 24px 70px rgba(0,0,0,.32)}
+  .modal .mh{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;font-weight:700;font-size:15px}
+  .modal .mb{padding:18px 20px;display:flex;flex-direction:column;gap:13px}
+  .modal .mf{padding:14px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);
+    padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:.3s;z-index:80;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+  .toast.show{opacity:1}
+  .icon-btn{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line-strong);color:var(--muted);background:var(--panel);transition:.12s}
+  .icon-btn:hover{color:var(--brand);border-color:var(--brand);background:var(--brand-soft)}
+
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:#d3d7de;border-radius:8px;border:3px solid var(--bg)}
+  ::-webkit-scrollbar-thumb:hover{background:#c1c6ce}
+  [data-theme="dark"] ::-webkit-scrollbar-thumb{background:#33383f;border-color:var(--bg)}
+  @media(max-width:780px){.app{grid-template-columns:1fr}.sidebar{display:none}.kpis{grid-template-columns:repeat(2,1fr)}.ov-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">复</div>
+      <div><h1>复盘台</h1><div class="sub">项目过程记录与复盘</div></div>
+    </div>
+    <div class="proj-head">
+      <span class="t">项目</span>
+      <button class="btn sm" id="addProjBtn">+ 新建</button>
+    </div>
+    <div class="proj-list" id="projList"></div>
+    <div class="side-foot">
+      <button class="ib" id="exportBtn" title="导出全部">导出</button>
+      <button class="ib" id="importBtn" title="导入">导入</button>
+      <button class="ib" id="themeBtn" title="切换主题">主题</button>
+      <input type="file" id="importFile" accept="application/json" style="display:none">
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar" id="topbar"></div>
+    <nav class="views" id="views">
+      <button class="v active" data-view="overview">总览</button>
+      <button class="v" data-view="timeline">时间线</button>
+      <button class="v" data-view="issues">问题 / 风险</button>
+      <button class="v" data-view="lessons">经验教训</button>
+    </nav>
+    <div class="content" id="content"></div>
+  </main>
+</div>
+
+<div class="mask" id="mask">
+  <div class="modal">
+    <div class="mh" id="modalTitle">标题</div>
+    <div class="mb" id="modalBody"></div>
+    <div class="mf">
+      <button class="btn ghost" id="modalCancel">取消</button>
+      <button class="btn" id="modalSave">保存</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ============ constants ============ */
+const PROJ_STATUS = ["规划中","进行中","已完成","搁置"];
+const SCHEMA = {
+  timeline:[
+    {key:"date",label:"日期",type:"date",required:true},
+    {key:"type",label:"类型",type:"select",options:["里程碑","关键动作","常规记录"],required:true},
+    {key:"title",label:"标题",type:"text",required:true},
+    {key:"desc",label:"说明",type:"textarea"},
+    {key:"deliverable",label:"交付物 / 备注",type:"text"}
+  ],
+  issues:[
+    {key:"title",label:"标题",type:"text",required:true},
+    {key:"type",label:"类型",type:"select",options:["问题","风险"]},
+    {key:"status",label:"状态",type:"select",options:["待处理","进行中","已解决","已关闭"]},
+    {key:"severity",label:"严重度",type:"select",options:["低","中","高","严重"]},
+    {key:"owner",label:"负责人",type:"text"},
+    {key:"createdAt",label:"创建日期",type:"date"},
+    {key:"resolvedAt",label:"解决日期",type:"date"},
+    {key:"desc",label:"说明",type:"textarea"}
+  ],
+  lessons:[
+    {key:"title",label:"标题",type:"text",required:true},
+    {key:"category",label:"分类",type:"select",options:["踩坑","方法论","可复用","其他"]},
+    {key:"tags",label:"标签(逗号分隔)",type:"text"},
+    {key:"date",label:"日期",type:"date"},
+    {key:"content",label:"正文",type:"textarea",required:true}
+  ]
+};
+const STATUS_COLOR={ "规划中":"b-gray","进行中":"b-blue","已完成":"b-green","搁置":"b-orange" };
+const ISSUE_STATUS_COLOR={ "待处理":"b-red","进行中":"b-orange","已解决":"b-green","已关闭":"b-gray" };
+const SEV_COLOR={ "低":"b-gray","中":"b-blue","高":"b-orange","严重":"b-red" };
+const SEV_RANK={"严重":0,"高":1,"中":2,"低":3};
+const STORE_KEY="retro_app_v1";
+
+/* ============ state ============ */
+let state = { projects:[], currentId:null, theme:"light" };
+let ui = { view:"overview", editingId:null, filters:{}, search:"" };
+
+/* ============ utils ============ */
+const $ = s=>document.querySelector(s);
+const uid = ()=> Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const today = ()=> new Date().toISOString().slice(0,10);
+const esc = s=> String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const curProj = ()=> state.projects.find(p=>p.id===state.currentId) || null;
+function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){ toast("保存失败："+e.message); } }
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),2200); }
+
+/* ============ seed demo ============ */
+function seed(){
+  const pid=uid();
+  state.projects=[{
+    id:pid, name:"示例项目：1P64S 刀片电池 Pack", description:"自主提供 BMS 与电芯，供应商负责模组组装与 Pack 打包。",
+    status:"进行中", progress:40, createdAt:today(),
+    timeline:[
+      {id:uid(),date:today(),type:"里程碑",title:"发出可行性询价书",desc:"向 3 家供应商发出 2-3 页精简版询价书，按「能不能做」维度组织。",deliverable:"询价书 PDF"},
+      {id:uid(),date:today(),type:"关键动作",title:"确认 Pack 规格",desc:"204.8V / 332Ah / 约 68kWh，外壳约 1961×630×247.7mm。",deliverable:""}
+    ],
+    issues:[
+      {id:uid(),title:"CANoe 18.2 长时测试崩溃",type:"问题",status:"进行中",severity:"高",owner:"杰哥",createdAt:today(),resolvedAt:"",desc:"11h+ 负载测试崩溃，崩溃点 SwappingBuffer.cpp:1063 mBlockMemory assertion。"},
+      {id:uid(),title:"供应商模组激光焊接良率",type:"风险",status:"待处理",severity:"中",owner:"供应商",createdAt:today(),resolvedAt:"",desc:"需确认刀片电芯模组焊接工艺与良率数据。"}
+    ],
+    lessons:[
+      {id:uid(),title:"CANoe 代码改动生效方式",category:"方法论",tags:"CANoe,调试",date:today(),content:"CAPL 代码改动后必须 File→Exit 完全退出重开，再 F7 编译修改才能生效。"}
+    ]
+  }];
+  state.currentId=pid;
+}
+
+/* ============ render: sidebar ============ */
+function renderSidebar(){
+  const list=$("#projList"); list.innerHTML="";
+  if(!state.projects.length){
+    list.innerHTML='<div style="padding:14px;color:var(--muted);font-size:13px">暂无项目，点「新建」开始。</div>';
+  }
+  state.projects.forEach(p=>{
+    const el=document.createElement("div");
+    el.className="proj-item"+(p.id===state.currentId?" active":"");
+    const cnt=(p.timeline?.length||0)+(p.issues?.length||0)+(p.lessons?.length||0);
+    const sc=STATUS_COLOR[p.status]||"b-gray";
+    el.innerHTML=`<div class="pn">${esc(p.name)}</div>
+      <div class="pm"><span class="dot ${sc}" style="background:var(--${sc==='b-gray'?'gray':sc==='b-blue'?'brand':sc==='b-green'?'green':'orange'})"></span>${cnt} 条 · 进度 ${p.progress||0}%</div>
+      <button class="del" title="删除项目" data-del="${p.id}">✕</button>`;
+    el.addEventListener("click",e=>{
+      if(e.target.dataset.del){ if(confirm("确定删除项目「"+p.name+"」？此操作不可撤销。")){ state.projects=state.projects.filter(x=>x.id!==p.id); if(state.currentId===p.id) state.currentId=state.projects[0]?.id||null; save(); renderAll(); } return; }
+      state.currentId=p.id; ui.editingId=null; renderAll();
+    });
+    list.appendChild(el);
+  });
+}
+
+/* ============ render: topbar ============ */
+function renderTopbar(){
+  const p=curProj(); const tb=$("#topbar");
+  if(!p){ tb.innerHTML='<div style="padding:30px;color:var(--muted)">请先在左侧新建一个项目。</div>'; return; }
+  tb.innerHTML=`
+    <div class="r1">
+      <h2>${esc(p.name)}</h2>
+      <span class="status-pill">${esc(p.status)}</span>
+      <button class="icon-btn" id="editProj" title="编辑项目">✎</button>
+    </div>
+    <div class="desc">${esc(p.description||"（暂无描述）")}</div>
+    <div class="progress-wrap">
+      <div class="progress-bar"><i style="width:${p.progress||0}%"></i></div>
+      <div class="progress-num">${p.progress||0}%</div>
+    </div>`;
+  $("#editProj").addEventListener("click",()=>openProjectModal(p.id));
+}
+
+/* ============ render: content ============ */
+function renderContent(){
+  const p=curProj(); const c=$("#content");
+  if(!p){ c.innerHTML=""; return; }
+  if(ui.view==="overview"){ renderOverview(p,c); return; }
+  ui.editingId=null;
+  const searchPh = ui.view==="issues"?"搜索标题/负责人/说明":ui.view==="lessons"?"搜索标题/标签/正文":"搜索标题/说明";
+  let filterHtml="";
+  if(ui.view==="issues"){
+    filterHtml = `<div class="filters">
+      ${["全部","待处理","进行中","已解决","已关闭"].map(s=>`<span class="chip ${!ui.filters.status||ui.filters.status===(s==="全部"?undefined:s)?'active':''}" data-fstatus="${s==="全部"?"":s}">${s}</span>`).join("")}
+      <span style="width:1px;background:var(--line);margin:2px 4px"></span>
+      ${["全部","低","中","高","严重"].map(s=>`<span class="chip ${!ui.filters.sev||ui.filters.sev===(s==="全部"?undefined:s)?'active':''}" data-fsev="${s==="全部"?"":s}">${s}</span>`).join("")}
+    </div>`;
+  }
+  c.innerHTML=`
+    <div class="toolbar">
+      <div class="sp"></div>
+      ${filterHtml}
+      <input class="search" id="searchInput" placeholder="${searchPh}" value="${esc(ui.search)}">
+    </div>
+    <div class="composer">${composerHtml(ui.view)}</div>
+    <div id="listWrap"></div>`;
+  attachComposer(ui.view);
+  const si=$("#searchInput"); if(si) si.addEventListener("input",e=>{ ui.search=e.target.value; renderList(p); });
+  c.querySelectorAll("[data-fstatus]").forEach(ch=>ch.addEventListener("click",()=>{ ui.filters.status=(ch.dataset.fstatus||undefined); renderContent(); }));
+  c.querySelectorAll("[data-fsev]").forEach(ch=>ch.addEventListener("click",()=>{ ui.filters.sev=(ch.dataset.fsev||undefined); renderContent(); }));
+  renderList(p);
+}
+
+/* ---------- overview ---------- */
+function renderOverview(p,c){
+  const issues=p.issues||[], tl=p.timeline||[], ls=p.lessons||[];
+  const total=issues.length;
+  const byStatus={ "待处理":0,"进行中":0,"已解决":0,"已关闭":0 };
+  issues.forEach(i=>byStatus[i.status]=(byStatus[i.status]||0)+1);
+  const open=byStatus["待处理"]+byStatus["进行中"];
+
+  // 需要关注：未完成（待处理/进行中），按严重度排序
+  const focus=issues.filter(i=>i.status==="待处理"||i.status==="进行中")
+    .sort((a,b)=>SEV_RANK[a.severity]-SEV_RANK[b.severity] || (b.createdAt||"").localeCompare(a.createdAt||""));
+  const recentTl=tl.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")).slice(0,5);
+  const recentLs=ls.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")).slice(0,4);
+
+  c.innerHTML=`
+    <div class="kpis">
+      <div class="kpi"><div class="k">项目进度</div><div class="v">${p.progress||0}<small>%</small></div></div>
+      <div class="kpi ${open?'alert':''}"><div class="k">待处理 + 进行中</div><div class="v">${open}</div></div>
+      <div class="kpi"><div class="k">已解决</div><div class="v">${byStatus["已解决"]+byStatus["已关闭"]}</div></div>
+      <div class="kpi"><div class="k">里程碑</div><div class="v">${tl.filter(t=>t.type==="里程碑").length}<small> / ${tl.length}</small></div></div>
+      <div class="kpi"><div class="k">经验沉淀</div><div class="v">${ls.length}</div></div>
+    </div>
+
+    <div class="ov-grid">
+      <div class="block">
+        <div class="bh"><h3>需要关注</h3><span class="more" data-go="issues">查看全部 →</span></div>
+        <div class="body">
+          ${focus.length?focus.map(i=>`
+            <div class="row-item" data-open="${i.id}">
+              <span class="dot" style="background:var(--${i.severity==='严重'?'red':i.severity==='高'?'orange':i.severity==='中'?'brand':'gray'})"></span>
+              <span class="rt">${esc(i.title)}</span>
+              <span class="badge ${ISSUE_STATUS_COLOR[i.status]}">${esc(i.status)}</span>
+              ${i.owner?`<span class="rm">${esc(i.owner)}</span>`:""}
+            </div>`).join(""):`<div class="empty-s">🎉 没有待处理 / 进行中的问题，干得漂亮。</div>`}
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="bh"><h3>最近动态</h3><span class="more" data-go="timeline">查看全部 →</span></div>
+        <div class="body">
+          ${recentTl.length?recentTl.map(t=>`
+            <div class="row-item" data-go="timeline">
+              <span class="badge ${t.type==="里程碑"?"b-green":t.type==="关键动作"?"b-blue":"b-gray"}">${esc(t.type)}</span>
+              <span class="rt">${esc(t.title)}</span>
+              <span class="rm">${esc(t.date)}</span>
+            </div>`).join(""):`<div class="empty-s">暂无时间线记录。</div>`}
+        </div>
+      </div>
+
+      <div class="block wide">
+        <div class="bh"><h3>经验沉淀（最近）</h3><span class="more" data-go="lessons">查看全部 →</span></div>
+        <div class="body">
+          ${recentLs.length?recentLs.map(l=>`
+            <div class="less-row" data-go="lessons">
+              <span class="badge b-blue" style="flex-shrink:0">${esc(l.category)}</span>
+              <div style="flex:1;min-width:0">
+                <div class="lt">${esc(l.title)}</div>
+                ${l.content?`<div class="lx">${esc(l.content)}</div>`:""}
+              </div>
+              ${l.date?`<span class="rm">${esc(l.date)}</span>`:""}
+            </div>`).join(""):`<div class="empty-s">暂无经验教训记录。</div>`}
+        </div>
+      </div>
+    </div>`;
+
+  c.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>switchView(b.dataset.go)));
+  c.querySelectorAll("[data-open]").forEach(b=>b.addEventListener("click",()=>{
+    ui.view="issues"; ui.editingId=b.dataset.open; syncTabs(); renderContent();
+  }));
+}
+
+/* ---------- composer (quick add) ---------- */
+function composerHtml(kind){
+  if(kind==="timeline"){
+    return `<span class="q-label">日期</span><input type="date" class="q-date" value="${today()}">
+      <select class="q-type">${["里程碑","关键动作","常规记录"].map(o=>`<option ${o==="关键动作"?"selected":""}>${o}</option>`).join("")}</select>
+      <input class="q-title" placeholder="输入标题，回车快速添加…">
+      <button class="btn q-add">+ 添加</button>
+      <div class="hint">回车即建；建完点卡片「编辑」补说明 / 交付物。</div>`;
+  }
+  if(kind==="issues"){
+    return `<select class="q-type">${["问题","风险"].map(o=>`<option>${o}</option>`).join("")}</select>
+      <select class="q-status">${["待处理","进行中","已解决","已关闭"].map(o=>`<option ${o==="待处理"?"selected":""}>${o}</option>`).join("")}</select>
+      <select class="q-sev">${["低","中","高","严重"].map(o=>`<option ${o==="中"?"selected":""}>${o}</option>`).join("")}</select>
+      <input class="q-owner" placeholder="负责人">
+      <input class="q-title" placeholder="输入标题，回车快速添加…">
+      <button class="btn q-add">+ 添加</button>
+      <div class="hint">回车即建；建完点卡片「编辑」补说明 / 解决日期。</div>`;
+  }
+  return `<select class="q-cat">${["踩坑","方法论","可复用","其他"].map(o=>`<option ${o==="方法论"?"selected":""}>${o}</option>`).join("")}</select>
+    <input class="q-tags" placeholder="标签">
+    <input class="q-title" placeholder="输入标题，回车快速添加…">
+    <button class="btn q-add">+ 添加</button>
+    <div class="hint">回车即建；建完点卡片「编辑」补正文。</div>`;
+}
+
+function attachComposer(kind){
+  const comp=document.querySelector(".composer"); if(!comp) return;
+  const title=comp.querySelector(".q-title");
+  const add=()=>{
+    const get=s=>{const e=comp.querySelector(s);return e?e.value:"";};
+    const t=get(".q-title").trim();
+    if(!t){ toast("请先输入标题"); return; }
+    const p=curProj(); const arr=p[kind]; const rec={id:uid()};
+    if(kind==="timeline"){ rec.date=get(".q-date")||today(); rec.type=get(".q-type"); rec.title=t; rec.desc=""; rec.deliverable=""; }
+    else if(kind==="issues"){ rec.type=get(".q-type"); rec.status=get(".q-status"); rec.severity=get(".q-sev"); rec.owner=get(".q-owner"); rec.title=t; rec.createdAt=today(); rec.resolvedAt=""; rec.desc=""; }
+    else { rec.category=get(".q-cat"); rec.tags=get(".q-tags"); rec.title=t; rec.date=today(); rec.content=""; }
+    arr.push(rec); save(); renderList(p);
+    title.value=""; title.focus();
+  };
+  comp.querySelector(".q-add").addEventListener("click",add);
+  title.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); add(); } });
+}
+
+/* ---------- list (with inline edit) ---------- */
+function renderList(p){
+  const wrap=$("#listWrap"); if(!wrap) return;
+  let items = (p[ui.view]||[]).slice();
+  const q=ui.search.trim().toLowerCase();
+  if(q){
+    items=items.filter(it=>{
+      if(ui.view==="timeline") return (it.title+" "+(it.desc||"")+" "+(it.deliverable||"")).toLowerCase().includes(q);
+      if(ui.view==="issues") return (it.title+" "+(it.owner||"")+" "+(it.desc||"")).toLowerCase().includes(q);
+      return (it.title+" "+(it.tags||"")+" "+(it.content||"")).toLowerCase().includes(q);
+    });
+  }
+  if(ui.view==="issues"){
+    if(ui.filters.status) items=items.filter(i=>i.status===ui.filters.status);
+    if(ui.filters.sev) items=items.filter(i=>i.severity===ui.filters.sev);
+    items.sort((a,b)=>(SEV_RANK[a.severity]-SEV_RANK[b.severity]) || (b.createdAt||"").localeCompare(a.createdAt||""));
+  } else {
+    items.sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+  }
+  if(!items.length){ wrap.innerHTML='<div class="empty-s">顶部输入即可快速添加一条记录。</div>'; return; }
+  wrap.innerHTML = items.map(it=> it.id===ui.editingId ? editableHtml(ui.view,it) : cardHtml(ui.view,it)).join("");
+  wrap.querySelectorAll("[data-edit]").forEach(b=>b.addEventListener("click",()=>{ ui.editingId=b.dataset.edit; renderList(curProj()); }));
+  wrap.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",()=>{
+    const p2=curProj(); const arr=p2[ui.view]; const it=arr.find(x=>x.id===b.dataset.del);
+    if(confirm("确定删除该记录？")){ p2[ui.view]=arr.filter(x=>x.id!==b.dataset.del); save(); renderAll(); }
+  }));
+  wrap.querySelectorAll("[data-save]").forEach(b=>b.addEventListener("click",()=>saveInline(ui.view,b.dataset.save)));
+  wrap.querySelectorAll("[data-cancel]").forEach(b=>b.addEventListener("click",()=>{ ui.editingId=null; renderList(curProj()); }));
+}
+
+function fieldHtml(f,val){
+  const v = val==null?"":val;
+  if(f.type==="select"){
+    return `<div class="field"><label>${esc(f.label)}${f.required?'<span class="req">*</span>':''}</label>
+      <select data-k="${f.key}">${f.options.map(o=>`<option ${o===v?"selected":""}>${esc(o)}</option>`).join("")}</select></div>`;
+  }
+  if(f.type==="textarea"){
+    return `<div class="field"><label>${esc(f.label)}${f.required?'<span class="req">*</span>':''}</label>
+      <textarea data-k="${f.key}">${esc(v)}</textarea></div>`;
+  }
+  return `<div class="field"><label>${esc(f.label)}${f.required?'<span class="req">*</span>':''}</label>
+    <input type="${f.type==="date"?"date":"text"}" data-k="${f.key}" value="${esc(v)}"></div>`;
+}
+function editableHtml(kind,it){
+  const schema=SCHEMA[kind];
+  return `<div class="card editing" data-editcard="${it.id}">
+    ${schema.map(f=>fieldHtml(f, it[f.key])).join("")}
+    <div class="acts-row">
+      <button class="btn sm" data-save="${it.id}">保存</button>
+      <button class="btn ghost sm" data-cancel="${it.id}">取消</button>
+    </div>
+  </div>`;
+}
+function saveInline(kind,id){
+  const card=document.querySelector(`[data-editcard="${id}"]`);
+  if(!card){ ui.editingId=null; return; }
+  const p=curProj(); const arr=p[kind]; const it=arr.find(x=>x.id===id);
+  let ok=true;
+  SCHEMA[kind].forEach(f=>{
+    const el=card.querySelector(`[data-k='${f.key}']`);
+    let v = el? el.value : "";
+    if(f.type==="date" && !v) v=today();
+    it[f.key]=v;
+    if(f.required && !String(v).trim()) ok=false;
+  });
+  if(!ok){ toast("请填写必填项（带 *）"); return; }
+  ui.editingId=null; save(); renderList(p); toast("已保存");
+}
+
+/* ---------- card render ---------- */
+function cardHtml(kind,it){
+  if(kind==="timeline"){
+    const typeBadge = it.type==="里程碑"?"b-green":it.type==="关键动作"?"b-blue":"b-gray";
+    return `<div class="card">
+      <div class="head"><div class="tt">${esc(it.title)}</div>
+        <div class="acts"><button class="ed" data-edit="${it.id}">编辑</button><button class="dl" data-del="${it.id}">删除</button></div></div>
+      <div class="meta"><span class="badge ${typeBadge}">${esc(it.type)}</span><span>📅 ${esc(it.date)}</span>${it.deliverable?`<span>📎 ${esc(it.deliverable)}</span>`:""}</div>
+      ${it.desc?`<div class="bd">${esc(it.desc)}</div>`:""}
+    </div>`;
+  }
+  if(kind==="issues"){
+    return `<div class="card">
+      <div class="head"><div class="tt">${esc(it.title)}</div>
+        <div class="acts"><button class="ed" data-edit="${it.id}">编辑</button><button class="dl" data-del="${it.id}">删除</button></div></div>
+      <div class="meta">
+        <span class="badge ${it.type==="风险"?"b-orange":"b-red"}">${esc(it.type)}</span>
+        <span class="badge ${ISSUE_STATUS_COLOR[it.status]}">${esc(it.status)}</span>
+        <span class="badge ${SEV_COLOR[it.severity]}">严重度 ${esc(it.severity)}</span>
+        ${it.owner?`<span>👤 ${esc(it.owner)}</span>`:""}
+        ${it.createdAt?`<span>📅 创建 ${esc(it.createdAt)}</span>`:""}
+        ${it.resolvedAt?`<span>✅ 解决 ${esc(it.resolvedAt)}</span>`:""}
+      </div>
+      ${it.desc?`<div class="bd">${esc(it.desc)}</div>`:""}
+    </div>`;
+  }
+  const tags=(it.tags||"").split(",").map(t=>t.trim()).filter(Boolean).map(t=>`<span class="tag">${esc(t)}</span>`).join("");
+  return `<div class="card">
+    <div class="head"><div class="tt">${esc(it.title)}</div>
+      <div class="acts"><button class="ed" data-edit="${it.id}">编辑</button><button class="dl" data-del="${it.id}">删除</button></div></div>
+    <div class="meta"><span class="badge b-blue">${esc(it.category)}</span>${it.date?`<span>📅 ${esc(it.date)}</span>`:""}</div>
+    <div class="bd">${esc(it.content)}</div>
+    ${tags?`<div class="tags">${tags}</div>`:""}
+  </div>`;
+}
+
+/* ---------- project modal ---------- */
+function openModal(title){ $("#modalTitle").textContent=title; $("#mask").classList.add("show"); }
+function closeModal(){ $("#mask").classList.remove("show"); $("#modalBody").innerHTML=""; }
+function openProjectModal(id){
+  const p = id? state.projects.find(x=>x.id===id):null;
+  $("#modalBody").innerHTML=`
+    <div class="field"><label>项目名称<span class="req">*</span></label><input data-k="name" value="${esc(p?p.name:"")}"></div>
+    <div class="field"><label>描述</label><textarea data-k="desc">${esc(p?p.description||"":"")}</textarea></div>
+    <div class="field"><label>状态</label><select data-k="status">${PROJ_STATUS.map(s=>`<option ${p&&p.status===s?"selected":(s==="进行中"?"selected":"")}>${esc(s)}</option>`).join("")}</select></div>
+    <div class="field"><label>项目进度 (%)</label><input type="number" min="0" max="100" data-k="progress" value="${p?(p.progress||0):0}"></div>`;
+  openModal(id?"编辑项目":"新建项目");
+  $("#modalSave").onclick=()=>{
+    const name=$("#modalBody [data-k=name]").value.trim();
+    if(!name){ toast("项目名称不能为空"); return; }
+    const status=$("#modalBody [data-k=status]").value;
+    let prog=parseInt($("#modalBody [data-k=progress]").value)||0; prog=Math.max(0,Math.min(100,prog));
+    const desc=$("#modalBody [data-k=desc]").value.trim();
+    if(id){ const pr=state.projects.find(x=>x.id===id); pr.name=name; pr.status=status; pr.progress=prog; pr.description=desc; }
+    else { const np={id:uid(),name,description:desc,status,progress:prog,createdAt:today(),timeline:[],issues:[],lessons:[]}; state.projects.push(np); state.currentId=np.id; }
+    save(); closeModal(); renderAll(); toast("已保存");
+  };
+}
+$("#modalCancel").addEventListener("click",closeModal);
+$("#mask").addEventListener("click",e=>{ if(e.target.id==="mask") closeModal(); });
+
+/* ---------- view switch ---------- */
+function switchView(v){
+  ui.view=v; ui.filters={}; ui.search=""; ui.editingId=null;
+  syncTabs(); renderContent();
+}
+function syncTabs(){
+  document.querySelectorAll(".views .v").forEach(x=>x.classList.toggle("active",x.dataset.view===ui.view));
+}
+
+/* ---------- project add / import / export / theme ---------- */
+$("#addProjBtn").addEventListener("click",()=>openProjectModal(null));
+$("#exportBtn").addEventListener("click",()=>{
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="复盘台数据_"+today()+".json"; a.click(); URL.revokeObjectURL(a.href);
+  toast("已导出全部数据");
+});
+$("#importBtn").addEventListener("click",()=>$("#importFile").click());
+$("#importFile").addEventListener("change",e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const data=JSON.parse(r.result);
+      if(!data.projects||!Array.isArray(data.projects)) throw new Error("文件格式不正确");
+      if(!confirm("导入将覆盖当前所有数据，确定继续？建议先导出备份。")) { e.target.value=""; return; }
+      state=data; state.theme=state.theme||"light";
+      save(); applyTheme(); renderAll(); toast("导入成功");
+    }catch(err){ toast("导入失败："+err.message); }
+    e.target.value="";
+  };
+  r.readAsText(file);
+});
+$("#themeBtn").addEventListener("click",()=>{ state.theme=state.theme==="dark"?"light":"dark"; applyTheme(); save(); });
+function applyTheme(){
+  document.documentElement.setAttribute("data-theme",state.theme==="dark"?"dark":"light");
+  $("#themeBtn").textContent=state.theme==="dark"?"浅色":"深色";
+}
+
+/* nav */
+$("#views").addEventListener("click",e=>{
+  const t=e.target.closest(".v"); if(!t) return;
+  switchView(t.dataset.view);
+});
+
+/* ---------- boot ---------- */
+function renderAll(){ renderSidebar(); renderTopbar(); syncTabs(); renderContent(); }
+function init(){
+  try{ const s=localStorage.getItem(STORE_KEY); if(s) state=JSON.parse(s); }catch(e){}
+  if(!state.projects||!state.projects.length){ seed(); save(); }
+  if(!state.currentId||!state.projects.find(p=>p.id===state.currentId)) state.currentId=state.projects[0]?.id||null;
+  state.theme=state.theme||"light";
+  applyTheme(); renderAll();
+}
+init();
+</script>
+</body>
+</html>
